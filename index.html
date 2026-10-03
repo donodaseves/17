@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestor de Cómodos Partilhado</title>
-    <!-- Importar o cliente do Supabase via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -30,7 +29,7 @@
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { text-align: center; color: var(--primary-color); margin-bottom: 15px; font-size: 1.5rem; }
 
-        /* Ecrã de Bloqueio por Palavra-passe */
+        /* Ecrã de Palavra-Passe */
         #authScreen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -51,27 +50,16 @@
         }
         .auth-box h2 { margin-bottom: 15px; font-size: 1.2rem; color: var(--text-color); }
         .auth-box input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            margin-bottom: 12px;
-            outline: none;
+            width: 100%; padding: 10px; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 14px; margin-bottom: 12px; outline: none;
         }
         .auth-box button {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
+            width: 100%; padding: 10px; background-color: var(--primary-color);
+            color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;
         }
         .auth-error { color: var(--danger-color); font-size: 12px; margin-top: 8px; display: none; }
 
-        /* Restante Estilização da Aplicação */
+        /* Abas e Cómodos */
         .tabs-container-wrapper {
             display: flex; overflow-x: auto; gap: 12px;
             border-bottom: 2px solid var(--border-color);
@@ -83,13 +71,22 @@
         
         .tab-btn-wrapper {
             display: flex; align-items: center; background-color: #e2e8f0;
-            border-radius: 6px 6px 0 0; white-space: nowrap; overflow: hidden; cursor: pointer;
+            border-radius: 6px 6px 0 0; white-space: nowrap; overflow: hidden;
         }
         .tab-btn-wrapper.active { background-color: var(--primary-color); }
-        .tab-btn { background: transparent; border: none; padding: 8px 12px 8px 14px; cursor: pointer; font-size: 14px; font-weight: 600; color: #475569; }
+        .tab-btn { background: transparent; border: none; padding: 10px 12px 10px 14px; cursor: pointer; font-size: 14px; font-weight: 600; color: #475569; }
         .tab-btn-wrapper.active .tab-btn { color: white; }
-        .tab-edit-btn { background: transparent; border: none; padding: 8px 10px 8px 0; cursor: pointer; font-size: 13px; color: #64748b; }
+        
+        .tab-edit-btn {
+            background: transparent; border: none; padding: 10px 12px 10px 4px;
+            cursor: pointer; font-size: 14px; color: #64748b; display: flex; align-items: center;
+        }
         .tab-btn-wrapper.active .tab-edit-btn { color: #cbd5e1; }
+
+        .rename-input {
+            border: 1px solid var(--primary-color); background: white; font-size: 14px;
+            font-weight: 600; width: 120px; padding: 6px; border-radius: 4px; outline: none; margin: 4px;
+        }
 
         .action-buttons-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .action-btn {
@@ -129,7 +126,6 @@
 </head>
 <body>
 
-    <!-- Ecrã de Palavra-Passe -->
     <div id="authScreen">
         <div class="auth-box">
             <h2>Insira a Palavra-Passe</h2>
@@ -152,7 +148,6 @@
         <div id="tabContent"></div>
     </div>
 
-    <!-- Modal Novo Cómodo -->
     <div class="modal-overlay" id="newTabModal">
         <div class="modal-content">
             <h3>Como deseja o novo cómodo?</h3>
@@ -165,11 +160,8 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO DO SUPABASE ---
-        const SUPABASE_URL = 'https://qurbmxtuyafnskiwumjh.supabase.co'; // Ex: 'https://xyz.supabase.co'
-        const SUPABASE_ANON_KEY = 'sb_publishable_d4bdcgTlHHvxKjYeM9UIFg_pGusbQFI'; // Ex: 'eyJhbGci...'
-        
-        // Palavra-passe definida por ti para proteger o site
+        const SUPABASE_URL = 'https://qurbmxtuyafnskiwumjh.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_d4bdcgTlHHvxKjYeM9UIFg_pGusbQFI';
         const SITE_PASSWORD = 'imout'; 
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -177,8 +169,8 @@
         let data = [];
         let currentTabId = null;
         let saveTimeout = null;
+        let lastTapTime = 0;
 
-        // --- SISTEMA DE SENHA ---
         document.getElementById('authBtn').onclick = checkPassword;
         document.getElementById('passInput').onkeydown = (e) => { if (e.key === 'Enter') checkPassword(); };
 
@@ -202,7 +194,6 @@
             initApp();
         }
 
-        // --- 2. LÓGICA DA APLICAÇÃO E SUPABASE ---
         async function initApp() {
             await loadDataFromSupabase();
             setupEventListeners();
@@ -217,7 +208,6 @@
                 .single();
 
             if (error || !rows) {
-                // Dados padrão se a tabela estiver vazia
                 data = [{
                     id: 'comodo_1',
                     title: 'Cómodo 1',
@@ -236,7 +226,7 @@
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(async () => {
                 await saveDataToSupabase();
-            }, 1000); // Grava 1 segundo após parar de escrever para poupar pedidos
+            }, 1000);
         }
 
         async function saveDataToSupabase() {
@@ -300,13 +290,31 @@
                     const btn = document.createElement('button');
                     btn.className = 'tab-btn';
                     btn.innerText = tab.title;
-                    btn.onclick = () => { currentTabId = tab.id; render(); };
+                    
+                    // Suporte a clique normal, duplo clique e toque duplo em mobile
+                    btn.onclick = () => {
+                        const currentTime = new Date().getTime();
+                        if ((currentTime - lastTapTime) < 300 && (currentTime - lastTapTime) > 0) {
+                            enableTabRename(tab.id, wrapper);
+                        } else {
+                            currentTabId = tab.id;
+                            render();
+                        }
+                        lastTapTime = currentTime;
+                    };
+                    
+                    btn.ondblclick = (e) => {
+                        e.stopPropagation();
+                        enableTabRename(tab.id, wrapper);
+                    };
 
                     const editBtn = document.createElement('button');
                     editBtn.className = 'tab-edit-btn';
                     editBtn.innerHTML = '✏️';
+                    editBtn.title = 'Editar nome';
                     editBtn.onclick = (e) => {
                         e.stopPropagation();
+                        currentTabId = tab.id;
                         enableTabRename(tab.id, wrapper);
                     };
 
@@ -416,9 +424,9 @@
             currentTabId = tabId;
             wrapperElement.innerHTML = '';
 
-            const input = document.createElement('inputtype');
+            const input = document.createElement('input');
             input.type = 'text';
-            input.style.cssText = 'border:1px solid #4f46e5; background:white; font-size:14px; font-weight:600; width:110px; padding:4px; border-radius:4px; outline:none; margin:4px;';
+            input.className = 'rename-input';
             input.value = tab.title;
             wrapperElement.appendChild(input);
             input.focus();
