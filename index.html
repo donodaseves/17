@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor de Cómodos</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* Barra de Abas */
+        .tabs-container-wrapper {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            scrollbar-width: thin;
+            align-items: center;
+        }
+
+        .tabs-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .tabs-separator {
+            width: 2px;
+            height: 28px;
+            background-color: var(--border-color);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .tabs-group-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+
+        .tab-btn-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #e2e8f0;
+            border-radius: 6px 6px 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .tab-btn-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .tab-btn-wrapper.dragging {
+            opacity: 0.4;
+        }
+
+        .tab-btn-wrapper.active {
+            background-color: var(--primary-color);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 12px 8px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .tab-btn-wrapper.active .tab-btn {
+            color: white;
+        }
+
+        .tab-edit-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 10px 8px 0;
+            cursor: pointer;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .tab-btn-wrapper.active .tab-edit-btn {
+            color: #cbd5e1;
+        }
+
+        .action-buttons-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .action-btn:active {
+            opacity: 0.8;
+        }
+
+        .delete-tab-btn {
+            background-color: var(--danger-color);
+        }
+
+        .add-box-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        /* Grid das Caixas (Despedidas) Arrastáveis */
+        .boxes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .box-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .box-container:active {
+            cursor: grabbing;
+        }
+
+        .box-container.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--primary-color);
+        }
+
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .box-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+            text-transform: capitalize;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .box-label::before {
+            content: '⠿';
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .char-counter {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .main-input {
+            flex: 1;
+            height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            cursor: text;
+        }
+
+        .main-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+        }
+
+        .info-btn {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .info-btn:hover, .info-btn.active {
+            background-color: #e0e7ff;
+            border-color: var(--primary-color);
+        }
+
+        .infinite-container {
+            display: none;
+            margin-top: 6px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .infinite-container.show {
+            display: block;
+        }
+
+        .infinite-textarea {
+            width: 100%;
+            height: 90px;
+            resize: vertical;
+            border: 1px dashed var(--primary-color);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            background-color: #faf8ff;
+            outline: none;
+            cursor: text;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab-btn-wrapper input.rename-input {
+            border: 1px solid var(--primary-color);
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            width: 110px;
+            padding: 4px;
+            border-radius: 4px;
+            outline: none;
+            margin: 4px;
+        }
+
+        /* Modal personalizado */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .modal-btn.fixed {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .modal-btn.infinite {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .modal-btn.cancel {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gestor de Cómodos</h1>
+
+        <div class="action-buttons-bar">
+            <button class="action-btn" id="btnNovoComodo">+ Novo Cómodo</button>
+            <button class="action-btn delete-tab-btn" id="btnExcluirComodo">Excluir Cómodo Atual</button>
+        </div>
+
+        <div class="tabs-container-wrapper" id="tabsHeader"></div>
+        <div id="extraControls"></div>
+        <div id="tabContent"></div>
+    </div>
+
+    <!-- Modal de Escolha de Novo Cómodo -->
+    <div class="modal-overlay" id="newTabModal">
+        <div class="modal-content">
+            <h3>Como deseja o novo cómodo?</h3>
+            <div class="modal-buttons">
+                <button class="modal-btn fixed" id="modalBtnFixed">Com 17 Despedidas</button>
+                <button class="modal-btn infinite" id="modalBtnInfinite">Infinito (Começar com 1)</button>
+                <button class="modal-btn cancel" id="modalBtnCancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [
+            {
+                id: 'comodo_1',
+                title: 'Cómodo 1',
+                type: 'fixed', 
+                boxes: Array(17).fill('').map(() => ({ shortText: '', infiniteText: '', showInfinite: false }))
+            }
+        ];
+
+        let currentTabId = data[0].id;
+        let lastTapTime = 0;
+        let draggedTabIndex = null;
+        let draggedBoxIndex = null;
+
+        // Configuração de eventos via JavaScript puro (Evita bloqueios em testadores de iframe)
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnNovo = document.getElementById('btnNovoComodo');
+            const btnExcluir = document.getElementById('btnExcluirComodo');
+            const modalFixed = document.getElementById('modalBtnFixed');
+            const modalInfinite = document.getElementById('modalBtnInfinite');
+            const modalCancel = document.getElementById('modalBtnCancel');
+
+            if (btnNovo) {
+                btnNovo.addEventListener('click', openModal);
+                btnNovo.addEventListener('touchend', (e) => { e.preventDefault(); openModal(); });
+            }
+
+            if (btnExcluir) {
+                btnExcluir.addEventListener('click', deleteCurrentTab);
+                btnExcluir.addEventListener('touchend', (e) => { e.preventDefault(); deleteCurrentTab(); });
+            }
+
+            if (modalFixed) {
+                modalFixed.addEventListener('click', () => createNewTab('fixed'));
+            }
+
+            if (modalInfinite) {
+                modalInfinite.addEventListener('click', () => createNewTab('infinite'));
+            }
+
+            if (modalCancel) {
+                modalCancel.addEventListener('click', closeModal);
+            }
+
+            render();
+        });
+
+        function openModal() {
+            const modal = document.getElementById('newTabModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('newTabModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function createNewTab(type) {
+            closeModal();
+            const initialBoxesCount = type === 'fixed' ? 17 : 1;
+            const newId = 'comodo_' + Date.now();
+            const newTitle = `Cómodo ${data.length + 1}`;
+            
+            data.push({
+                id: newId,
+                title: newTitle,
+                type: type,
+                boxes: Array(initialBoxesCount).fill('').map(() => ({ shortText: '', infiniteText: '', showInfinite: false }))
+            });
+            
+            currentTabId = newId;
+            render();
+        }
+
+        function render() {
+            const tabsHeader = document.getElementById('tabsHeader');
+            const tabContent = document.getElementById('tabContent');
+            const extraControls = document.getElementById('extraControls');
+
+            if (!tabsHeader || !tabContent) return;
+
+            tabsHeader.innerHTML = '';
+
+            const fixedTabs = data.map((t, idx) => ({ tab: t, originalIndex: idx })).filter(item => item.tab.type === 'fixed');
+            const infiniteTabs = data.map((t, idx) => ({ tab: t, originalIndex: idx })).filter(item => item.tab.type === 'infinite');
+
+            const renderTabGroup = (items, groupLabel) => {
+                if (items.length === 0) return;
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'tabs-group';
+
+                const label = document.createElement('span');
+                label.className = 'tabs-group-label';
+                label.innerText = groupLabel;
+                groupDiv.appendChild(label);
+
+                items.forEach(({ tab, originalIndex: index }) => {
+                    const isActive = tab.id === currentTabId;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `tab-btn-wrapper ${isActive ? 'active' : ''}`;
+                    wrapper.draggable = true;
+
+                    wrapper.ondragstart = (e) => {
+                        draggedTabIndex = index;
+                        wrapper.classList.add('dragging');
+                    };
+
+                    wrapper.ondragend = () => {
+                        wrapper.classList.remove('dragging');
+                        draggedTabIndex = null;
+                    };
+
+                    wrapper.ondragover = (e) => { e.preventDefault(); };
+
+                    wrapper.ondrop = (e) => {
+                        e.preventDefault();
+                        if (draggedTabIndex !== null && draggedTabIndex !== index) {
+                            const movedTab = data.splice(draggedTabIndex, 1)[0];
+                            data.splice(index, 0, movedTab);
+                            render();
+                        }
+                    };
+
+                    const btn = document.createElement('button');
+                    btn.className = 'tab-btn';
+                    btn.innerText = tab.title;
+                    
+                    btn.onclick = () => {
+                        const currentTime = new Date().getTime();
+                        if ((currentTime - lastTapTime) < 300 && (currentTime - lastTapTime) > 0) {
+                            enableTabRename(tab.id, wrapper);
+                        } else {
+                            currentTabId = tab.id;
+                            render();
+                        }
+                        lastTapTime = currentTime;
+                    };
+
+                    btn.ondblclick = (e) => {
+                        e.stopPropagation();
+                        enableTabRename(tab.id, wrapper);
+                    };
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'tab-edit-btn';
+                    editBtn.innerHTML = '✏️';
+                    editBtn.title = 'Renomear cómodo';
+                    editBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        currentTabId = tab.id;
+                        enableTabRename(tab.id, wrapper);
+                    };
+
+                    wrapper.appendChild(btn);
+                    wrapper.appendChild(editBtn);
+                    groupDiv.appendChild(wrapper);
+                });
+
+                tabsHeader.appendChild(groupDiv);
+            };
+
+            renderTabGroup(fixedTabs, 'Fixo');
+            if (fixedTabs.length > 0 && infiniteTabs.length > 0) {
+                const separator = document.createElement('div');
+                separator.className = 'tabs-separator';
+                tabsHeader.appendChild(separator);
+            }
+            renderTabGroup(infiniteTabs, 'Infinito');
+
+            const currentTab = data.find(t => t.id === currentTabId) || data[0];
+            
+            if (currentTab.type === 'infinite') {
+                extraControls.innerHTML = `<button class="add-box-btn" id="btnAddInfiniteBox">+ Adicionar Nova Despedida</button>`;
+                setTimeout(() => {
+                    const addBoxBtn = document.getElementById('btnAddInfiniteBox');
+                    if (addBoxBtn) {
+                        addBoxBtn.onclick = addInfiniteBox;
+                    }
+                }, 0);
+            } else {
+                extraControls.innerHTML = '';
+            }
+
+            let gridHtml = `<div class="boxes-grid">`;
+            for (let i = 0; i < currentTab.boxes.length; i++) {
+                const boxData = currentTab.boxes[i] || { shortText: '', infiniteText: '', showInfinite: false };
+                const currentLength = boxData.shortText.length;
+
+                gridHtml += `
+                    <div class="box-container" draggable="true" 
+                        ondragstart="handleBoxDragStart(event, ${i})" 
+                        ondragend="handleBoxDragEnd(event)" 
+                        ondragover="event.preventDefault()" 
+                        ondrop="handleBoxDrop(event, ${i})">
+                        <div class="box-header">
+                            <span class="box-label">despedida ${i + 1}</span>
+                            <span class="char-counter" id="counter_${i}">${currentLength}/20</span>
+                        </div>
+                        <div class="input-row">
+                            <input type="text" class="main-input" maxlength="20" 
+                                value="${escapeHtml(boxData.shortText)}" 
+                                placeholder="Máx 20 caracteres..." 
+                                oninput="updateShortText(${i}, this.value)" />
+                            <button class="info-btn ${boxData.showInfinite ? 'active' : ''}" 
+                                title="Notas detalhadas" 
+                                onclick="toggleInfinite(${i})">ℹ</button>
+                        </div>
+                        <div class="infinite-container ${boxData.showInfinite ? 'show' : ''}">
+                            <textarea class="infinite-textarea" 
+                                placeholder="Escreva o quanto quiser aqui..." 
+                                oninput="updateInfiniteText(${i}, this.value)">${escapeHtml(boxData.infiniteText)}</textarea>
+                        </div>
+                    </div>
+                `;
+            }
+            gridHtml += `</div>`;
+            tabContent.innerHTML = gridHtml;
+        }
+
+        function handleBoxDragStart(e, index) {
+            draggedBoxIndex = index;
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function handleBoxDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            draggedBoxIndex = null;
+        }
+
+        function handleBoxDrop(e, targetIndex) {
+            e.preventDefault();
+            if (draggedBoxIndex !== null && draggedBoxIndex !== targetIndex) {
+                const currentTab = data.find(t => t.id === currentTabId);
+                if (currentTab) {
+                    const movedBox = currentTab.boxes.splice(draggedBoxIndex, 1)[0];
+                    currentTab.boxes.splice(targetIndex, 0, movedBox);
+                    render();
+                }
+            }
+        }
+
+        function updateShortText(index, value) {
+            const currentTab = data.find(t => t.id === currentTabId);
+            if (currentTab) {
+                currentTab.boxes[index].shortText = value;
+                const counterEl = document.getElementById(`counter_${index}`);
+                if (counterEl) {
+                    counterEl.innerText = `${value.length}/20`;
+                }
+            }
+        }
+
+        function updateInfiniteText(index, value) {
+            const currentTab = data.find(t => t.id === currentTabId);
+            if (currentTab) {
+                currentTab.boxes[index].infiniteText = value;
+            }
+        }
+
+        function toggleInfinite(index) {
+            const currentTab = data.find(t => t.id === currentTabId);
+            if (currentTab) {
+                currentTab.boxes[index].showInfinite = !currentTab.boxes[index].showInfinite;
+                render();
+            }
+        }
+
+        function addInfiniteBox() {
+            const currentTab = data.find(t => t.id === currentTabId);
+            if (currentTab && currentTab.type === 'infinite') {
+                currentTab.boxes.push({ shortText: '', infiniteText: '', showInfinite: false });
+                render();
+            }
+        }
+
+        function deleteCurrentTab() {
+            if (data.length === 1) {
+                alert("Não pode excluir o único cómodo restante!");
+                return;
+            }
+            if (confirm("Tem certeza que deseja excluir este cómodo e todo o seu conteúdo?")) {
+                data = data.filter(t => t.id !== currentTabId);
+                currentTabId = data[0].id;
+                render();
+            }
+        }
+
+        function enableTabRename(tabId, wrapperElement) {
+            const tab = data.find(t => t.id === tabId);
+            if (!tab) return;
+
+            currentTabId = tabId;
+            wrapperElement.innerHTML = '';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'rename-input';
+            input.value = tab.title;
+            
+            wrapperElement.appendChild(input);
+            input.focus();
+            input.select();
+
+            const saveNewTitle = () => {
+                const newTitle = input.value.trim();
+                if (newTitle) {
+                    tab.title = newTitle;
+                }
+                render();
+            };
+
+            input.onblur = saveNewTitle;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveNewTitle();
+                }
+            };
+        }
+
+        function escapeHtml(text) {
+            return (text || '')
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
